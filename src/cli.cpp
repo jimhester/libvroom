@@ -338,6 +338,19 @@ struct CommonOptions {
   bool no_cache = false; // Explicitly disable caching
 };
 
+// Apply delimiter from CommonOptions to CsvOptions
+// Routes single-char delimiters to the fast char path, multi-byte to multi_separator
+static void applyDelimiter(libvroom::CsvOptions& csv_opts, const CommonOptions& opts) {
+  if (opts.delimiter.empty())
+    return;
+  if (opts.delimiter.size() == 1) {
+    csv_opts.separator = opts.delimiter[0];
+  } else {
+    csv_opts.multi_separator = opts.delimiter;
+    csv_opts.separator = '\0';
+  }
+}
+
 // Apply cache configuration from CommonOptions to CsvOptions
 static void applyCacheConfig(libvroom::CsvOptions& csv_opts, const CommonOptions& opts) {
   if (opts.no_cache || !opts.enable_cache)
@@ -653,8 +666,14 @@ int cmd_convert(int argc, char* argv[]) {
   opts.progress = common.show_progress;
 
   // CSV options
-  if (!common.delimiter.empty())
-    opts.csv.separator = common.delimiter;
+  if (!common.delimiter.empty()) {
+    if (common.delimiter.size() == 1) {
+      opts.csv.separator = common.delimiter[0];
+    } else {
+      opts.csv.multi_separator = common.delimiter;
+      opts.csv.separator = '\0';
+    }
+  }
   opts.csv.quote = common.quote;
   opts.csv.has_header = common.has_header;
   opts.csv.guess_integer = common.guess_integer;
@@ -765,8 +784,7 @@ int cmd_count(int argc, char* argv[]) {
 
   // Set up CsvReader
   libvroom::CsvOptions csv_opts;
-  if (!opts.delimiter.empty())
-    csv_opts.separator = opts.delimiter;
+  applyDelimiter(csv_opts, opts);
   csv_opts.quote = opts.quote;
   csv_opts.has_header = opts.has_header;
   csv_opts.guess_integer = opts.guess_integer;
@@ -844,8 +862,7 @@ int cmd_head(int argc, char* argv[]) {
 
   // Set up CsvReader
   libvroom::CsvOptions csv_opts;
-  if (!opts.delimiter.empty())
-    csv_opts.separator = opts.delimiter;
+  applyDelimiter(csv_opts, opts);
   csv_opts.quote = opts.quote;
   csv_opts.has_header = opts.has_header;
   csv_opts.guess_integer = opts.guess_integer;
@@ -959,8 +976,7 @@ int cmd_info(int argc, char* argv[]) {
 
   // Set up CsvReader
   libvroom::CsvOptions csv_opts;
-  if (!opts.delimiter.empty())
-    csv_opts.separator = opts.delimiter;
+  applyDelimiter(csv_opts, opts);
   csv_opts.quote = opts.quote;
   csv_opts.has_header = opts.has_header;
   csv_opts.guess_integer = opts.guess_integer;
@@ -1096,8 +1112,7 @@ int cmd_select(int argc, char* argv[]) {
 
   // Set up CsvReader
   libvroom::CsvOptions csv_opts;
-  if (!opts.delimiter.empty())
-    csv_opts.separator = opts.delimiter;
+  applyDelimiter(csv_opts, opts);
   csv_opts.quote = opts.quote;
   csv_opts.has_header = opts.has_header;
   csv_opts.guess_integer = opts.guess_integer;
@@ -1246,8 +1261,7 @@ int cmd_pretty(int argc, char* argv[]) {
 
   // Set up CsvReader
   libvroom::CsvOptions csv_opts;
-  if (!opts.delimiter.empty())
-    csv_opts.separator = opts.delimiter;
+  applyDelimiter(csv_opts, opts);
   csv_opts.quote = opts.quote;
   csv_opts.has_header = opts.has_header;
   csv_opts.guess_integer = opts.guess_integer;

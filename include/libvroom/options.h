@@ -13,7 +13,8 @@ namespace libvroom {
 
 // CSV parsing options
 struct CsvOptions {
-  std::string separator; // empty = auto-detect via DialectDetector
+  char separator = '\0';       // '\0' = auto-detect via DialectDetector
+  std::string multi_separator; // Multi-byte separator (overrides separator when non-empty)
   char quote = '"';
   bool escape_backslash = false; // Use backslash escaping (\") instead of doubled quotes ("")
   std::string comment;           // No comment by default (empty string)

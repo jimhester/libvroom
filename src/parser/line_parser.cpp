@@ -39,15 +39,10 @@ std::vector<std::string> LineParser::parse_header(const char* data, size_t size)
     return headers;
   }
 
-  // Helper to match separator at a given position
-  auto matches_sep_at = [&](size_t pos) -> bool {
-    if (options_.separator.empty())
-      return false;
-    if (options_.separator.size() == 1)
-      return data[pos] == options_.separator[0];
-    return pos + options_.separator.size() <= size &&
-           std::memcmp(data + pos, options_.separator.data(), options_.separator.size()) == 0;
-  };
+  // Determine effective separator
+  const bool use_multi = !options_.multi_separator.empty();
+  const char sep_char = options_.separator;
+  const std::string& multi_sep = options_.multi_separator;
 
   bool in_quote = false;
   std::string current_field;
@@ -101,16 +96,24 @@ std::vector<std::string> LineParser::parse_header(const char* data, size_t size)
       } else {
         in_quote = !in_quote;
       }
-    } else if (!in_quote && matches_sep_at(i)) {
-      // Trim trailing whitespace from field
+    } else if (!in_quote && use_multi && i + multi_sep.size() <= size &&
+               std::memcmp(data + i, multi_sep.data(), multi_sep.size()) == 0) {
+      // Multi-byte separator match
       while (!current_field.empty() &&
              (current_field.back() == ' ' || current_field.back() == '\t')) {
         current_field.pop_back();
       }
       headers.push_back(std::move(current_field));
       current_field.clear();
-      // Advance past multi-byte separator (loop will do +1)
-      i += options_.separator.size() - 1;
+      i += multi_sep.size() - 1;
+    } else if (c == sep_char && !in_quote && !use_multi) {
+      // Single-byte separator match (hot path)
+      while (!current_field.empty() &&
+             (current_field.back() == ' ' || current_field.back() == '\t')) {
+        current_field.pop_back();
+      }
+      headers.push_back(std::move(current_field));
+      current_field.clear();
     } else {
       // Skip leading whitespace if field is empty and not in quote
       if (current_field.empty() && !in_quote && (c == ' ' || c == '\t')) {
@@ -138,15 +141,10 @@ size_t LineParser::parse_line(const char* data, size_t size,
     return 0;
   }
 
-  // Helper to match separator at a given position
-  auto matches_sep_at = [&](size_t pos) -> bool {
-    if (options_.separator.empty())
-      return false;
-    if (options_.separator.size() == 1)
-      return data[pos] == options_.separator[0];
-    return pos + options_.separator.size() <= size &&
-           std::memcmp(data + pos, options_.separator.data(), options_.separator.size()) == 0;
-  };
+  // Determine effective separator
+  const bool use_multi = !options_.multi_separator.empty();
+  const char sep_char = options_.separator;
+  const std::string& multi_sep = options_.multi_separator;
 
   bool in_quote = false;
   std::string current_field;
@@ -208,8 +206,9 @@ size_t LineParser::parse_line(const char* data, size_t size,
       } else {
         in_quote = !in_quote;
       }
-    } else if (!in_quote && matches_sep_at(i)) {
-      // End of field - trim and append
+    } else if (!in_quote && use_multi && i + multi_sep.size() <= size &&
+               std::memcmp(data + i, multi_sep.data(), multi_sep.size()) == 0) {
+      // Multi-byte separator match
       while (!current_field.empty() &&
              (current_field.back() == ' ' || current_field.back() == '\t')) {
         current_field.pop_back();
@@ -223,8 +222,22 @@ size_t LineParser::parse_line(const char* data, size_t size,
 
       current_field.clear();
       ++field_index;
-      // Advance past multi-byte separator (loop will do +1)
-      i += options_.separator.size() - 1;
+      i += multi_sep.size() - 1;
+    } else if (c == sep_char && !in_quote && !use_multi) {
+      // Single-byte separator match (hot path)
+      while (!current_field.empty() &&
+             (current_field.back() == ' ' || current_field.back() == '\t')) {
+        current_field.pop_back();
+      }
+
+      if (is_null_value(current_field)) {
+        columns[field_index]->append_null();
+      } else {
+        columns[field_index]->append(current_field);
+      }
+
+      current_field.clear();
+      ++field_index;
     } else {
       // Skip leading whitespace if field is empty and not in quote
       if (current_field.empty() && !in_quote && (c == ' ' || c == '\t')) {

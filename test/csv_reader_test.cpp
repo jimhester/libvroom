@@ -145,7 +145,7 @@ TEST_F(CsvReaderTest, EmbeddedSeparators) {
 
 TEST_F(CsvReaderTest, SemicolonSeparator) {
   libvroom::CsvOptions opts;
-  opts.separator = ";";
+  opts.separator = ';';
   auto [chunks, schema] = parseFile(testDataPath("separators/semicolon.csv"), opts);
   EXPECT_EQ(schema.size(), 3u);
   EXPECT_EQ(chunks.total_rows, 3u);
@@ -155,7 +155,7 @@ TEST_F(CsvReaderTest, SemicolonSeparator) {
 
 TEST_F(CsvReaderTest, TabSeparator) {
   libvroom::CsvOptions opts;
-  opts.separator = "\t";
+  opts.separator = '\t';
   auto [chunks, schema] = parseFile(testDataPath("separators/tab.csv"), opts);
   EXPECT_EQ(schema.size(), 3u);
   EXPECT_EQ(chunks.total_rows, 3u);
@@ -164,7 +164,7 @@ TEST_F(CsvReaderTest, TabSeparator) {
 
 TEST_F(CsvReaderTest, PipeSeparator) {
   libvroom::CsvOptions opts;
-  opts.separator = "|";
+  opts.separator = '|';
   auto [chunks, schema] = parseFile(testDataPath("separators/pipe.csv"), opts);
   EXPECT_EQ(schema.size(), 3u);
   EXPECT_EQ(chunks.total_rows, 3u);
@@ -919,7 +919,7 @@ TEST_F(CsvReaderTest, AutoDetectCommaDelimiter) {
 
 TEST_F(CsvReaderTest, ExplicitDelimiterSkipsAutoDetect) {
   libvroom::CsvOptions opts;
-  opts.separator = "\t";
+  opts.separator = '\t';
   libvroom::CsvReader reader(opts);
   auto result = reader.open(testDataPath("separators/tab.csv"));
   ASSERT_TRUE(result.ok);
@@ -1141,7 +1141,7 @@ TEST_F(CsvReaderTest, UnescapeBackslash_MultipleEscapes) {
 TEST_F(CsvReaderTest, BackslashEscape_BasicFile) {
   libvroom::CsvOptions opts;
   opts.escape_backslash = true;
-  opts.separator = ",";
+  opts.separator = ',';
 
   auto [chunks, schema] = parseFile(testDataPath("escape/backslash_escape.csv"), opts);
   ASSERT_EQ(schema.size(), 3u);
@@ -1172,7 +1172,7 @@ TEST_F(CsvReaderTest, BackslashEscape_BasicFile) {
 TEST_F(CsvReaderTest, BackslashEscape_FromString) {
   libvroom::CsvOptions opts;
   opts.escape_backslash = true;
-  opts.separator = ",";
+  opts.separator = ',';
 
   std::string csv = "a,b\n\"he said \\\"hello\\\"\",world\n";
   auto [chunks, schema] = parseContent(csv, opts);
@@ -1184,7 +1184,7 @@ TEST_F(CsvReaderTest, BackslashEscape_FromString) {
 TEST_F(CsvReaderTest, BackslashEscape_DoubleBackslash) {
   libvroom::CsvOptions opts;
   opts.escape_backslash = true;
-  opts.separator = ",";
+  opts.separator = ',';
 
   std::string csv = "a\n\"C:\\\\path\\\\to\\\\file\"\n";
   auto [chunks, schema] = parseContent(csv, opts);
@@ -1195,7 +1195,7 @@ TEST_F(CsvReaderTest, BackslashEscape_DoubleBackslash) {
 TEST_F(CsvReaderTest, BackslashEscape_EscapedNewline) {
   libvroom::CsvOptions opts;
   opts.escape_backslash = true;
-  opts.separator = ",";
+  opts.separator = ',';
 
   std::string csv = "a\n\"line1\\nline2\"\n";
   auto [chunks, schema] = parseContent(csv, opts);
@@ -1213,7 +1213,7 @@ TEST_F(CsvReaderTest, BackslashEscape_DefaultFalseRegression) {
 TEST_F(CsvReaderTest, BackslashEscape_MixedQuotedUnquoted) {
   libvroom::CsvOptions opts;
   opts.escape_backslash = true;
-  opts.separator = ",";
+  opts.separator = ',';
 
   std::string csv = "a,b,c\nunquoted,\"quoted \\\"value\\\"\",123\n";
   auto [chunks, schema] = parseContent(csv, opts);
@@ -1226,7 +1226,7 @@ TEST_F(CsvReaderTest, BackslashEscape_MixedQuotedUnquoted) {
 TEST_F(CsvReaderTest, BackslashEscape_NoHeader) {
   libvroom::CsvOptions opts;
   opts.escape_backslash = true;
-  opts.separator = ",";
+  opts.separator = ',';
   opts.has_header = false;
 
   std::string csv = "\"hello \\\"world\\\"\",42\n";
@@ -1352,7 +1352,7 @@ TEST(MultiByteDelimiter, FullPipelinePipeWavePipe) {
   std::memcpy(buffer.data(), csv.data(), csv.size());
 
   libvroom::CsvOptions opts;
-  opts.separator = "|~|";
+  opts.multi_separator = "|~|";
   opts.has_header = true;
 
   libvroom::CsvReader reader(opts);
@@ -1382,7 +1382,7 @@ TEST(MultiByteDelimiter, FullPipelineDoubleTab) {
   std::memcpy(buffer.data(), csv.data(), csv.size());
 
   libvroom::CsvOptions opts;
-  opts.separator = "\t\t";
+  opts.multi_separator = "\t\t";
   opts.has_header = true;
 
   libvroom::CsvReader reader(opts);
@@ -1401,7 +1401,7 @@ TEST(MultiByteDelimiter, SepInsideQuotes) {
   std::memcpy(buffer.data(), csv.data(), csv.size());
 
   libvroom::CsvOptions opts;
-  opts.separator = "|~|";
+  opts.multi_separator = "|~|";
   opts.has_header = true;
 
   libvroom::CsvReader reader(opts);
@@ -1423,7 +1423,7 @@ TEST(MultiByteDelimiter, EmptyFieldsBetweenSep) {
   std::memcpy(buffer.data(), csv.data(), csv.size());
 
   libvroom::CsvOptions opts;
-  opts.separator = "|~|";
+  opts.multi_separator = "|~|";
   opts.has_header = true;
 
   libvroom::CsvReader reader(opts);
@@ -1441,7 +1441,7 @@ TEST(MultiByteDelimiter, NoHeader) {
   std::memcpy(buffer.data(), csv.data(), csv.size());
 
   libvroom::CsvOptions opts;
-  opts.separator = "|~|";
+  opts.multi_separator = "|~|";
   opts.has_header = false;
 
   libvroom::CsvReader reader(opts);
@@ -1464,7 +1464,7 @@ TEST(MultiByteDelimiter, SingleByteRegression) {
   std::memcpy(buffer.data(), csv.data(), csv.size());
 
   libvroom::CsvOptions opts;
-  opts.separator = ",";
+  opts.separator = ',';
   opts.has_header = true;
 
   libvroom::CsvReader reader(opts);

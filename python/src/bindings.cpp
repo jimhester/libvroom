@@ -47,8 +47,14 @@ read_csv(const std::string& path, std::optional<std::string> separator = std::nu
          char decimal_mark = '.', size_t skip = 0) {
   // Set up options
   libvroom::CsvOptions csv_opts;
-  if (separator)
-    csv_opts.separator = *separator;
+  if (separator) {
+    if (separator->size() == 1) {
+      csv_opts.separator = (*separator)[0];
+    } else if (separator->size() > 1) {
+      csv_opts.multi_separator = *separator;
+      csv_opts.separator = '\0';
+    }
+  }
   if (quote)
     csv_opts.quote = *quote;
   csv_opts.has_header = has_header;
