@@ -7,6 +7,7 @@
 #include "libvroom/io_util.h"
 #include "libvroom/vroom.h"
 
+#include <chrono>
 #include <cstring>
 #include <gtest/gtest.h>
 #include <string>
@@ -526,4 +527,31 @@ TEST(CsvReaderEncoding, OpenFromBufferUTF16LE) {
   EXPECT_EQ(reader.encoding().encoding, CharEncoding::UTF16_LE);
   ASSERT_EQ(reader.schema().size(), 3u);
   EXPECT_EQ(reader.schema()[0].name, "name");
+}
+
+// =============================================================================
+// Performance Tests
+// =============================================================================
+
+// Performance: detect_encoding should be fast even for large buffers
+// because it only samples the beginning, not the entire file
+TEST(EncodingDetection, LargeBufferPerformance) {
+  // Create a 100MB buffer of pure ASCII
+  const size_t large_size = 100 * 1024 * 1024;
+  std::vector<uint8_t> large_buf(large_size, 'A');
+  // Add some CSV structure
+  for (size_t i = 0; i < large_size; i += 100) {
+    large_buf[i] = '\n';
+  }
+
+  auto start = std::chrono::high_resolution_clock::now();
+  auto result = detect_encoding(large_buf.data(), large_buf.size());
+  auto end = std::chrono::high_resolution_clock::now();
+  double ms = std::chrono::duration<double, std::milli>(end - start).count();
+
+  EXPECT_EQ(result.encoding, CharEncoding::UTF8);
+  EXPECT_FALSE(result.needs_transcoding);
+  // Should complete in under 1ms (sampling, not full scan)
+  EXPECT_LT(ms, 1.0) << "detect_encoding took " << ms << "ms on 100MB buffer; "
+                     << "should be <1ms with sampling";
 }
